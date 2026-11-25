@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="20 savollik jamoaviy viktorina: jamoalar, a'zolar, ball va natijalar.">
+<title>Jamoaviy Viktorina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: studio scoreboard — question stage on the left, live team standings rail on the right; setup is a two-column editor */
+:root{
+  --bg:#eef1f6; --surface:#ffffff; --surface-2:#e3e8f0; --line:#cdd5e1;
+  --fg:#141a26; --muted:#5a6678; --accent:#f2b705; --accent-ink:#1a1400;
+  --good:#1f9d63; --bad:#d64545; --focus:#2f6fe4;
+  --t1:#2f6fe4; --t2:#e0592a; --t3:#1f9d63; --t4:#9a3fd1; --t5:#c99400; --t6:#0f9bb0;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1220; --surface:#151c2e; --surface-2:#1d2640; --line:#2b3654;
+  --fg:#e9edf6; --muted:#97a3bb; --accent:#ffc928; --accent-ink:#1a1400;
+  --good:#3cc987; --bad:#f06a6a; --focus:#6c9cff;
+  --t1:#6c9cff; --t2:#ff8a5c; --t3:#3cc987; --t4:#c27bff; --t5:#f0c43a; --t6:#3fd0e4;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1220; --surface:#151c2e; --surface-2:#1d2640; --line:#2b3654;
+  --fg:#e9edf6; --muted:#97a3bb; --accent:#ffc928; --accent-ink:#1a1400;
+  --good:#3cc987; --bad:#f06a6a; --focus:#6c9cff;
+  --t1:#6c9cff; --t2:#ff8a5c; --t3:#3cc987; --t4:#c27bff; --t5:#f0c43a; --t6:#3fd0e4;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(22px,3.2vw,30px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:17px;font-weight:700}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.muted{color:var(--muted)}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:700;background:var(--surface-2);color:var(--fg);transition:transform .08s,filter .15s}
+button:hover{filter:brightness(1.06)}
+button:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-good{background:var(--good);color:#fff}
+.btn-bad{background:var(--bad);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--line)}
+.btn-sm{padding:6px 10px;font-size:13px;border-radius:8px}
+input,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:64px}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:40px;height:40px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:15px;flex:none}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* setup */
+.setup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:20px;align-items:start}
+.teams-list{display:flex;flex-direction:column;gap:12px}
+.team-edit{border:1px solid var(--line);border-left:6px solid var(--tc);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.team-edit .row{display:flex;gap:8px;align-items:center}
+.hint{font-size:12px;color:var(--muted)}
+.q-list{display:flex;flex-direction:column;gap:8px;max-height:640px;overflow:auto;padding-right:4px}
+.q-row{display:grid;grid-template-columns:34px minmax(0,2.2fr) minmax(0,1.2fr) 64px 30px;gap:8px;align-items:center}
+.q-num{font-family:var(--mono);font-weight:700;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.q-head{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.icon-btn{padding:4px;width:30px;height:30px;border-radius:8px;background:transparent;color:var(--muted);font-size:18px;line-height:1}
+.icon-btn:hover{color:var(--bad)}
+.settings{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
+.settings label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.settings input{width:110px}
+.start-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 20px}
+.err{color:var(--bad);font-weight:600;font-size:14px}
+.sample-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+
+/* game */
+.game{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.track{display:flex;gap:5px;flex-wrap:wrap}
+.dot{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:700;background:var(--surface-2);color:var(--muted);border:2px solid transparent;font-variant-numeric:tabular-nums}
+.dot.ok{background:var(--good);color:#fff}
+.dot.no{background:var(--bad);color:#fff}
+.dot.cur{border-color:var(--accent);color:var(--fg)}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
+.stage-top{background:var(--tc);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.stage-top .who{display:flex;flex-direction:column;gap:2px}
+.stage-top .tname{font-family:var(--display);font-size:22px;font-weight:800}
+.stage-top .member{font-size:14px;opacity:.92;font-weight:600}
+.qcount{font-family:var(--mono);font-weight:700;font-size:15px;background:rgba(0,0,0,.22);padding:6px 12px;border-radius:99px;font-variant-numeric:tabular-nums}
+.stage-body{padding:28px 26px;display:flex;flex-direction:column;gap:22px}
+.qtext{font-family:var(--display);font-weight:700;font-size:clamp(22px,3vw,34px);line-height:1.25;text-wrap:balance}
+.pts-chip{align-self:flex-start;font-family:var(--mono);font-weight:700;font-size:13px;padding:4px 10px;border-radius:99px;background:var(--surface-2)}
+.answer{border:2px dashed var(--line);border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:4px}
+.answer.shown{border-style:solid;border-color:var(--good)}
+.answer .val{font-size:20px;font-weight:700}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.controls .spacer{flex:1}
+.timer{display:flex;align-items:center;gap:12px}
+.ring{width:64px;height:64px;position:relative;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.ring.low .num{color:var(--bad)}
+.verdict{font-family:var(--display);font-weight:800;font-size:18px}
+.verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
+
+.board{display:flex;flex-direction:column;gap:10px}
+.srow{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.srow.active{border-color:var(--tc);box-shadow:0 0 0 2px var(--tc) inset}
+.rank{font-family:var(--mono);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.sname{font-weight:700;display:flex;align-items:center;gap:8px;min-width:0}
+.sname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.swatch{width:10px;height:10px;border-radius:3px;background:var(--tc);flex:none}
+.score{font-family:var(--display);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums}
+.bar{grid-column:2/4;height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--tc);border-radius:99px;transition:width .4s}
+.sub{font-size:12px;color:var(--muted);grid-column:2/4;margin-top:-4px}
+
+/* end */
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:end;max-width:720px;margin:0 auto;width:100%}
+.pod{background:var(--surface);border:1px solid var(--line);border-top:8px solid var(--tc);border-radius:14px;padding:16px;text-align:center;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pod .place{font-family:var(--display);font-weight:800;font-size:28px}
+.pod.p1{padding-block:34px;background:var(--surface)}
+.pod.p1 .place{color:var(--accent);font-size:40px}
+.pod .pname{font-weight:800;font-size:17px;overflow-wrap:anywhere}
+.pod .pscore{font-family:var(--display);font-weight:800;font-size:24px}
+.winner{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.winner h1{font-size:clamp(26px,4.4vw,44px)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+
+/* guide */
+.guide{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none;counter-reset:st}
+.steps li{counter-increment:st;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.steps li::before{content:counter(st);width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:14px}
+.steps b{font-size:15px}
+.steps span{font-size:13.5px;color:var(--muted)}
+.rules{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13.5px;color:var(--muted)}
+.rules b{color:var(--fg)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;color:var(--muted);align-items:center}
+.flow span{background:var(--surface-2);padding:3px 10px;border-radius:99px}
+@media (max-width:900px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.steps{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){
+  .setup,.game{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .q-row{grid-template-columns:26px minmax(0,1fr) 56px 30px}
+  .q-row .q-a{grid-column:2/3}
+  .q-head{display:none}
+  .q-row{padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .podium{grid-template-columns:minmax(0,1fr)}
+  .pod.p1{order:-1}
+  .stage-body{padding:20px 16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+(function(){
+const KEY='jamoaviy-viktorina-v3';
+const COLORS=['--t1','--t2','--t3','--t4','--t5','--t6'];
+const SAMPLE_Q=[
+ ["Futbol o‘yinida hakam o‘yinchiga qizil kartochka ko‘rsatsa, uning jamoasi maydonda necha kishi bilan qoladi?","10 kishi bilan"],
+ ["Basketbolda o‘yinchi FIBA (Olimpiada) qoidalariga ko‘ra nechta shaxsiy qoidabuzarlikdan (fol) so‘ng o‘yindan chetlatiladi?","5 ta"],
+ ["Qaysi sport turida kichik dumaloq to‘p va maxsus raketka ishlatiladi, lekin o‘yin stol ustida emas, katta kortda o‘tkaziladi?","Katta tennis"],
+ ["Voleybolda jamoa to‘pni raqib tomonga o‘tkazishdan oldin unga ko‘pi bilan necha marta tegishi mumkin (blokdan tashqari)?","3 marta"],
+ ["Qaysi sport turida sportchilar konkida muz ustida harakatlanib, shaybani raqib darvozasiga kiritishga harakat qiladi?","Shaybali xokkey (muz ustida xokkey)"],
+ ["Boksda «nokaut» nima degani?","Yiqilgan bokschi hakam 10 gacha sanaguncha o‘rnidan turib, jangni davom ettira olmasligi"],
+ ["Qaysi sport turida sportchilar og‘ir shtangani ko‘tarib, kuch sinashadi?","Og‘ir atletika"],
+ ["Yengil atletikada 100 metrga yugurish musobaqasi nimani aniqlaydi?","Eng tezkor yuguruvchini (sprint tezligini)"],
+ ["Suzishda «krol» usuli yana qanday nomlanadi?","Erkin usul"],
+ ["Velosportda poygachilar qanday transport vositasida bellashadi?","Velosipedda"],
+ ["Qaysi sport turida maydonning har ikki tomonida halqa o‘rnatiladi va maqsad to‘pni shu halqadan o‘tkazish hisoblanadi?","Basketbol"],
+ ["Stol tennisida servis berayotgan o‘yinchi to‘pni avval o‘z tomoniga, keyin raqib tomoniga tushirishi kerakmi?","Ha, albatta"],
+ ["Olimpiada o‘yinlari necha yilda bir marta o‘tkaziladi?","4 yilda bir marta"],
+ ["Qaysi sport turida darvozabon o‘z jarima maydonchasida to‘pni qo‘lida ushlab harakatlanishi mumkin (maxsus qoidalar doirasida)?","Futbol (shuningdek, futzal va gandbol)"],
+ ["Shaxmatda o‘yin boshida har bir o‘yinchida nechta piyoda bo‘ladi?","8 ta"],
+ ["Qaysi yakkakurash turida raqibni belbog‘idan yoki yelkasidan ushlab, yerga yiqitish asosiy maqsad hisoblanadi?","Kurash (yoki dzyudo)"],
+ ["Gimnastikada ayollar musobaqalarida ustida muvozanat saqlab mashq bajariladigan uzun taxta nima deb ataladi?","Gimnastika xodasi (muvozanat xodasi)"],
+ ["Futbolda burchak zarbasi qachon belgilanadi?","To‘p himoyalanayotgan jamoa o‘yinchisiga oxirgi bo‘lib tegib, darvozaga kirmasdan darvoza chizig‘idan chiqib ketganda"],
+ ["Badmintonda o‘yinchilar volanni to‘r ustidan bir-biriga urib o‘ynaydi. G‘alaba odatda nechta setni yutishga bog‘liq?","3 setdan 2 tasini yutishga"],
+ ["Qaysi sport turida sportchi chang‘ida baland tramplindan uchib, eng uzoq masofaga va chiroyli texnika bilan qo‘nishga harakat qiladi?","Chang‘ida tramplindan sakrash"]
+];
+function defaults(){
+  return {
+    phase:'setup', sample:false, timer:30, defPts:10,
+    teams:[
+      {id:'a',name:'',members:[]},
+      {id:'b',name:'',members:[]}
+    ],
+    questions:SAMPLE_Q.map(([q,a])=>({q,a,pts:10})),
+    idx:0, results:[], revealed:false
+  };
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+const hot=window.claude&&window.claude.hot;
+if(hot&&hot.data&&hot.data.S)S=hot.data.S;
+if(!S||!S.teams)S=defaults();
+if(hot&&hot.snapshot)try{hot.snapshot(()=>({S}))}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const app=document.getElementById('app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tc=i=>`var(${COLORS[i%COLORS.length]})`;
+const uid=()=>Math.random().toString(36).slice(2,8);
+
+/* ---------- game logic ---------- */
+function playable(){return S.questions.filter(q=>q.q.trim())}
+function teamFor(i){return i % S.teams.length}
+function memberFor(i){
+  const t=teamFor(i), team=S.teams[t];
+  if(!team.members.length)return '';
+  let k=0; for(let j=0;j<i;j++) if(teamFor(j)===t) k++;
+  return team.members[k % team.members.length];
+}
+function scores(){
+  const sc=S.teams.map((t,i)=>({i,name:t.name,pts:0,ok:0,asked:0,stolen:0}));
+  S.results.forEach(r=>{ if(!r)return; const o=r.owner??r.team; if(sc[o])sc[o].asked++;
+    if(r.correct&&sc[r.team]){const w=sc[r.team]; w.pts+=r.pts; w.ok++; if(r.team!==o)w.stolen++;} });
+  return sc;
+}
+function nextTeam(owner,fails){
+  const n=S.teams.length;
+  for(let k=0;k<n;k++){const c=(owner+k)%n; if(!fails.includes(c))return c}
+  return -1;
+}
+function ranked(){return scores().slice().sort((a,b)=>b.pts-a.pts||b.ok-a.ok)}
+
+/* ---------- timer ---------- */
+let tLeft=0,tRun=null,audio=null;
+function stopTimer(){if(tRun){clearInterval(tRun);tRun=null}}
+function resetTimer(){stopTimer();tLeft=S.timer;drawTimer()}
+function beep(){
+  try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();
+    const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=660;o.connect(g);g.connect(audio.destination);
+    g.gain.setValueAtTime(.2,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.6);o.start();o.stop(audio.currentTime+.6)}catch(e){}
+}
+function toggleTimer(){
+  if(tRun){stopTimer();drawTimer();return}
+  if(tLeft<=0)tLeft=S.timer;
+  try{audio=audio||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}
+  tRun=setInterval(()=>{tLeft--; if(tLeft<=0){tLeft=0;stopTimer();beep()} drawTimer()},1000);
+  drawTimer();
+}
+function drawTimer(){
+  const ring=document.getElementById('ring'); if(!ring)return;
+  const C=2*Math.PI*28, frac=S.timer?tLeft/S.timer:0;
+  ring.querySelector('.prog').setAttribute('stroke-dashoffset',String(C*(1-frac)));
+  ring.querySelector('.num').textContent=tLeft;
+  ring.classList.toggle('low',tLeft<=5);
+  const b=document.getElementById('tbtn'); if(b)b.textContent=tRun?'Pauza':(tLeft<S.timer&&tLeft>0?'Davom etish':'Vaqtni boshlash');
+}
+
+/* ---------- render ---------- */
+function render(){
+  stopTimer();
+  if(S.phase==='setup')renderSetup();
+  else if(S.phase==='game')renderGame();
+  else renderEnd();
+  save();
+}
+function topbar(right){
+  return `<div class="topbar"><div class="brand"><div class="mark">20</div><div><div class="eyebrow">Jamoaviy o'yin</div><h1>Jamoaviy Viktorina</h1></div></div><div class="controls">${right||''}</div></div>`;
+}
+
+function renderSetup(){
+  const n=playable().length;
+  app.innerHTML=`
+  ${topbar(S.guideHidden?`<button class="btn-sm btn-ghost" id="showGuide">Qanday o‘ynaladi?</button>`:'')}
+  ${S.guideHidden?'':`<section class="guide" aria-label="Qanday o‘ynaladi">
+    <div class="panel-head"><div><div class="eyebrow">Qo‘llanma</div><h2>Qanday o‘ynaladi?</h2></div><button class="btn-sm btn-ghost" id="hideGuide">Tushunarli, yashirish</button></div>
+    <ol class="steps">
+      <li><b>Jamoalarni yozing</b><span>Pastdagi «Jamoalar va a'zolar» bo‘limida har bir jamoaning nomini va a'zolarini kiriting. Kerak bo‘lsa «+ Jamoa qo‘shish» tugmasini bosing.</span></li>
+      <li><b>Savollarni tekshiring</b><span>20 ta savol va javoblar tayyor. Xohlasangiz, savol, javob yoki ballni o‘zgartirishingiz mumkin.</span></li>
+      <li><b>O‘yinni boshlang</b><span>Eng pastdagi sariq «O‘yinni boshlash» tugmasini bosing. Savollar jamoalarga navbat bilan beriladi.</span></li>
+      <li><b>Javobni baholang</b><span>Savolni o‘qing, vaqtni boshlang. Jamoa javob bergach «To‘g‘ri» yoki «Noto‘g‘ri» tugmasini bosing, keyin «Keyingi savol».</span></li>
+    </ol>
+    <div class="rules">
+      <span><b>To‘g‘ri javob:</b> jamoaga savol bali qo‘shiladi.</span>
+      <span><b>Noto‘g‘ri javob:</b> savol keyingi jamoaga o‘tadi.</span>
+      <span><b>Hech kim topa olmasa:</b> ball hech kimga berilmaydi.</span>
+      <span><b>Xato bosdingizmi?</b> «Bekor qilish» tugmasi bor.</span>
+    </div>
+  </section>`}
+  <div class="setup">
+    <section class="panel">
+      <div class="panel-head"><div><div class="eyebrow">1-qadam</div><h2>Jamoalar va a'zolar</h2></div>
+        <button class="btn-sm" id="addTeam" ${S.teams.length>=6?'disabled':''}>+ Jamoa qo'shish</button></div>
+      <div class="teams-list">
+        ${S.teams.map((t,i)=>`
+          <div class="team-edit" style="--tc:${tc(i)}">
+            <div class="row"><input id="tn-${t.id}" data-t="${i}" data-f="name" value="${esc(t.name)}" placeholder="${i+1}-jamoa nomini yozing" aria-label="Jamoa nomi">
+              <button class="icon-btn" data-del-team="${i}" title="Jamoani o'chirish" aria-label="Jamoani o'chirish" ${S.teams.length<=2?'disabled':''}>×</button></div>
+            <textarea id="tm-${t.id}" data-t="${i}" data-f="members" placeholder="A'zolar: har birini yangi qatorga yoki vergul bilan yozing" aria-label="Jamoa a'zolari">${esc(t.members.join(', '))}</textarea>
+            <div class="hint" id="tc-${t.id}">${t.members.length} ta a'zo</div>
+          </div>`).join('')}
+      </div>
+      <div class="settings">
+        <label for="setTimer">Har savolga vaqt (soniya)<input id="setTimer" type="number" min="5" max="600" value="${S.timer}"></label>
+        <label for="setPts">Standart ball<input id="setPts" type="number" min="1" max="1000" value="${S.defPts}"></label>
+      </div>
+      <div class="hint">Savollar navbat bilan beriladi: 1-savol 1-jamoaga, 2-savol 2-jamoaga va hokazo. Jamoa ichida a'zolar ham navbat bilan javob beradi. Jamoa noto‘g‘ri javob bersa, savol keyingi jamoaga o‘tadi va to‘g‘ri javob bergan jamoa ballni oladi.</div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><div class="eyebrow">2-qadam</div><h2>Savollar <span class="muted" id="qn">(${n} ta)</span> ${S.sample?'<span class="sample-tag">namuna</span>':''}</h2></div>
+        <div class="controls"><button class="btn-sm btn-ghost" id="clearQ">Hammasini tozalash</button><button class="btn-sm" id="addQ">+ Savol</button></div></div>
+      <div class="q-row"><span></span><span class="q-head">Savol</span><span class="q-head q-a">To'g'ri javob</span><span class="q-head">Ball</span><span></span></div>
+      <div class="q-list">
+        ${S.questions.map((q,i)=>`
+          <div class="q-row">
+            <span class="q-num">${i+1}</span>
+            <input id="qq-${i}" data-q="${i}" data-f="q" value="${esc(q.q)}" placeholder="Savol matni" aria-label="${i+1}-savol">
+            <input class="q-a" id="qa-${i}" data-q="${i}" data-f="a" value="${esc(q.a)}" placeholder="Javob" aria-label="${i+1}-savol javobi">
+            <input id="qp-${i}" data-q="${i}" data-f="pts" type="number" min="0" value="${q.pts}" aria-label="${i+1}-savol bali">
+            <button class="icon-btn" data-del-q="${i}" title="O'chirish" aria-label="${i+1}-savolni o'chirish">×</button>
+          </div>`).join('')}
+      </div>
+    </section>
+  </div>
+  <div class="start-bar">
+    <div><div class="err" id="err"></div><div class="hint" id="sum">${S.teams.length} ta jamoa · ${n} ta savol · har bir jamoaga taxminan ${S.teams.length?Math.floor(n/S.teams.length):0} ta savol</div></div>
+    <div class="controls">${S.results.some(Boolean)?`<button class="btn-ghost" id="resume">O'yinga qaytish</button>`:''}<button class="btn-primary" id="start">O'yinni boshlash →</button></div>
+  </div>`;
+
+  app.querySelectorAll('[data-t]').forEach(el=>el.addEventListener('input',e=>{
+    const t=S.teams[+el.dataset.t];
+    if(el.dataset.f==='name')t.name=el.value;
+    else{t.members=el.value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean);document.getElementById('tc-'+t.id).textContent=t.members.length+" ta a'zo"}
+    save();
+  }));
+  app.querySelectorAll('[data-q]').forEach(el=>el.addEventListener('input',()=>{
+    const q=S.questions[+el.dataset.q];
+    if(el.dataset.f==='pts')q.pts=Math.max(0,parseInt(el.value)||0); else q[el.dataset.f]=el.value;
+    S.sample=false; updSum(); save();
+  }));
+  const hg=document.getElementById('hideGuide'); if(hg) hg.onclick=()=>{S.guideHidden=true;render()};
+  const sg=document.getElementById('showGuide'); if(sg) sg.onclick=()=>{S.guideHidden=false;render()};
+  document.getElementById('setTimer').oninput=e=>{S.timer=Math.min(600,Math.max(5,parseInt(e.target.value)||30));save()};
+  document.getElementById('setPts').oninput=e=>{S.defPts=Math.max(1,parseInt(e.target.value)||10);save()};
+  document.getElementById('addTeam').onclick=()=>{S.teams.push({id:uid(),name:'',members:[]});render()};
+  app.querySelectorAll('[data-del-team]').forEach(b=>b.onclick=()=>{S.teams.splice(+b.dataset.delTeam,1);S.results=[];S.idx=0;render()});
+  document.getElementById('addQ').onclick=()=>{S.questions.push({q:'',a:'',pts:S.defPts});render();const el=document.getElementById('qq-'+(S.questions.length-1));el&&el.focus()};
+  app.querySelectorAll('[data-del-q]').forEach(b=>b.onclick=()=>{S.questions.splice(+b.dataset.delQ,1);S.sample=false;render()});
+  const clr=document.getElementById('clearQ');
+  clr.onclick=()=>{
+    if(clr.dataset.arm){S.questions=Array.from({length:20},()=>({q:'',a:'',pts:S.defPts}));S.sample=false;S.results=[];S.idx=0;render();}
+    else{clr.dataset.arm='1';clr.textContent='Ishonchingiz komilmi? Yana bosing';clr.classList.add('btn-bad');setTimeout(()=>{if(clr.isConnected){delete clr.dataset.arm;clr.textContent='Hammasini tozalash';clr.classList.remove('btn-bad')}},3500)}
+  };
+  const rs=document.getElementById('resume'); if(rs) rs.onclick=()=>{S.questions=S.questions.filter(q=>q.q.trim());S.phase='game';render()};
+  document.getElementById('start').onclick=()=>{
+    const err=document.getElementById('err');
+    if(S.teams.length<2){err.textContent="Kamida 2 ta jamoa kerak.";return}
+    if(S.teams.some(t=>!t.name.trim())){err.textContent="Har bir jamoaga nom bering.";return}
+    if(!playable().length){err.textContent="Kamida bitta savol yozing.";return}
+    S.questions=playable(); S.results=[]; S.idx=0; S.revealed=false; S.phase='game'; render();
+  };
+  function updSum(){const n=playable().length;document.getElementById('qn').textContent=`(${n} ta)`;document.getElementById('sum').textContent=`${S.teams.length} ta jamoa · ${n} ta savol · har bir jamoaga taxminan ${Math.floor(n/S.teams.length)} ta savol`}
+}
+
+function renderGame(){
+  const i=S.idx, q=S.questions[i], owner=teamFor(i), r=S.results[i];
+  const fails=r?(r.fails||[]):(S.fails||[]);
+  const t=r?(r.correct?r.team:owner):nextTeam(owner,fails);
+  const team=S.teams[t], stolen=t!==owner, mem=stolen?'':memberFor(i);
+  const failNames=fails.map(f=>S.teams[f]&&S.teams[f].name).filter(Boolean);
+  const moreAfter=!r&&nextTeam(owner,[...fails,t])!==-1;
+  const total=S.questions.length, sc=scores(), max=Math.max(1,...sc.map(s=>s.pts));
+  const C=2*Math.PI*28;
+  app.innerHTML=`
+  ${topbar(`<button class="btn-sm btn-ghost" id="toSetup">Sozlamalar</button><button class="btn-sm btn-ghost" id="finish">O'yinni yakunlash</button>`)}
+  <div class="track" aria-label="Savollar">
+    ${S.questions.map((_,k)=>{const rr=S.results[k];return `<button class="dot ${rr?(rr.correct?'ok':'no'):''} ${k===i?'cur':''}" data-go="${k}" title="${k+1}-savol · ${esc(S.teams[teamFor(k)].name)}" aria-label="${k+1}-savolga o'tish">${k+1}</button>`}).join('')}
+  </div>
+  <div class="game">
+    <section class="stage" style="--tc:${tc(t)}">
+      <div class="stage-top">
+        <div class="who"><span class="eyebrow" style="color:inherit;opacity:.85">${stolen?'Savol shu jamoaga o‘tdi':'Savol shu jamoaga'}</span><span class="tname">${esc(team.name)}</span>${mem?`<span class="member">Javob beradi: ${esc(mem)}</span>`:''}${failNames.length?`<span class="member">Noto‘g‘ri javob berdi: ${failNames.map(esc).join(', ')}</span>`:''}</div>
+        <span class="qcount">${i+1} / ${total}</span>
+      </div>
+      <div class="stage-body">
+        <div class="flow" aria-label="Tartib"><span>1. Savolni o‘qing</span>→<span>2. Vaqtni boshlang</span>→<span>3. «To‘g‘ri» yoki «Noto‘g‘ri»</span>→<span>4. Keyingi savol</span></div>
+        <span class="pts-chip">${q.pts} ball</span>
+        <div class="qtext">${esc(q.q)}</div>
+        <div class="answer ${S.revealed||r?'shown':''}">
+          <span class="eyebrow">To'g'ri javob</span>
+          <span class="val">${S.revealed||r?esc(q.a||'—'):'Yashirin'}</span>
+        </div>
+        <div class="controls">
+          <div class="timer">
+            <div class="ring" id="ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="var(--surface-2)" stroke-width="6"/><circle class="prog" cx="32" cy="32" r="28" fill="none" stroke="var(--tc)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><span class="num">${S.timer}</span></div>
+            <div class="controls"><button id="tbtn" class="btn-sm">Vaqtni boshlash</button><button id="treset" class="btn-sm btn-ghost">Qayta</button></div>
+          </div>
+          <span class="spacer"></span>
+          ${!(S.revealed||r)?`<button class="btn-ghost" id="reveal">Javobni ko'rsatish</button>`:''}
+        </div>
+        <div class="controls">
+          ${r?`<span class="verdict ${r.correct?'ok':'no'}">${r.correct?`${stolen?esc(team.name)+': t':'T'}o‘g‘ri! +${r.pts} ball`:'Hech bir jamoa to‘g‘ri javob bermadi'}</span><button class="btn-sm btn-ghost" id="undo">Bekor qilish</button>`
+             :`<button class="btn-good" id="ok">To‘g‘ri · +${q.pts}</button><button class="btn-bad" id="no">${moreAfter?'Noto‘g‘ri → keyingi jamoaga':'Noto‘g‘ri'}</button>`}
+          <span class="spacer"></span>
+          <button id="prev" class="btn-ghost" ${i===0?'disabled':''}>← Oldingi</button>
+          <button id="next" class="btn-primary" ${!r?'disabled':''}>${i===total-1?'Natijalar →':'Keyingi savol →'}</button>
+        </div>
+      </div>
+    </section>
+    <aside class="panel">
+      <div class="panel-head"><h2>Hisob</h2><span class="hint">${S.results.filter(Boolean).length} / ${total} javob</span></div>
+      <div class="board">
+        ${ranked().map((s,k)=>`
+          <div class="srow ${s.i===t?'active':''}" style="--tc:${tc(s.i)}">
+            <span class="rank">${k+1}</span>
+            <span class="sname"><i class="swatch"></i><span>${esc(s.name)}</span></span>
+            <span class="score">${s.pts}</span>
+            <span class="bar"><i style="width:${s.pts/max*100}%"></i></span>
+            <span class="sub">${s.ok} ta to‘g‘ri${s.stolen?` (${s.stolen} tasi o‘tgan savoldan)`:''} · ${S.teams[s.i].members.length} a'zo</span>
+          </div>`).join('')}
+      </div>
+    </aside>
+  </div>`;
+
+  tLeft=S.timer; drawTimer();
+  document.getElementById('tbtn').onclick=toggleTimer;
+  document.getElementById('treset').onclick=resetTimer;
+  const rv=document.getElementById('reveal'); if(rv) rv.onclick=()=>{S.revealed=true;render()};
+  const ok=document.getElementById('ok'); if(ok) ok.onclick=()=>{S.results[i]={owner,team:t,correct:true,pts:q.pts,fails:[...fails]};S.fails=[];S.revealed=true;render()};
+  const no=document.getElementById('no'); if(no) no.onclick=()=>{
+    const nf=[...fails,t];
+    if(nextTeam(owner,nf)===-1){S.results[i]={owner,team:null,correct:false,pts:q.pts,fails:nf};S.fails=[];S.revealed=true}
+    else{S.fails=nf;S.revealed=false}
+    render();
+  };
+  const un=document.getElementById('undo'); if(un) un.onclick=()=>{S.results[i]=null;S.fails=[];S.revealed=false;render()};
+  const go=k=>{S.idx=k;S.fails=[];S.revealed=false;render()};
+  document.getElementById('prev').onclick=()=>go(Math.max(0,i-1));
+  document.getElementById('next').onclick=()=>{ if(i===total-1){S.fails=[];S.phase='end';render()} else go(i+1) };
+  app.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+  document.getElementById('toSetup').onclick=()=>{S.phase='setup';render()};
+  document.getElementById('finish').onclick=()=>{S.phase='end';render()};
+}
+
+function renderEnd(){
+  const rk=ranked(), top=rk[0], tie=rk.length>1&&rk[1].pts===top.pts;
+  const order=[rk[1],rk[0],rk[2]];
+  app.innerHTML=`
+  ${topbar(`<button class="btn-sm btn-ghost" id="back">O'yinga qaytish</button><button class="btn-sm btn-ghost" id="toSetup">Sozlamalar</button><button class="btn-sm btn-primary" id="again">Qaytadan o'ynash</button>`)}
+  <section class="winner">
+    <span class="eyebrow">${tie?'Durang':"G'olib jamoa"}</span>
+    <h1 style="color:${tc(top.i)}">${tie?rk.filter(s=>s.pts===top.pts).map(s=>esc(s.name)).join(' va '):esc(top.name)}</h1>
+    <span class="muted">${top.pts} ball · ${top.ok} ta to'g'ri javob</span>
+  </section>
+  <div class="podium">
+    ${order.map((s,k)=>s?`<div class="pod ${k===1?'p1':''}" style="--tc:${tc(s.i)}"><span class="place">${rk.indexOf(s)+1}</span><span class="pname">${esc(s.name)}</span><span class="pscore">${s.pts}</span><span class="hint">${s.ok} ta to‘g‘ri javob</span></div>`:'<div></div>').join('')}
+  </div>
+  <section class="panel">
+    <h2>Savollar bo'yicha natija</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>#</th><th>Savol</th><th>Jamoa</th><th>Javob bergan</th><th>Natija</th></tr></thead>
+      <tbody>${S.questions.map((q,k)=>{const r=S.results[k];return `<tr><td class="n">${k+1}</td><td>${esc(q.q)}<div class="hint">${esc(q.a)}</div></td><td>${esc(S.teams[teamFor(k)].name)}</td><td>${esc(memberFor(k))}</td><td class="n" style="color:${r?(r.correct?'var(--good)':'var(--bad)'):'var(--muted)'}">${r?(r.correct?'+'+r.pts+((r.owner??r.team)!==r.team&&S.teams[r.team]?' · '+esc(S.teams[r.team].name):''):'0'):'—'}</td></tr>`}).join('')}</tbody>
+    </table></div>
+  </section>`;
+  document.getElementById('back').onclick=()=>{S.phase='game';render()};
+  document.getElementById('toSetup').onclick=()=>{S.phase='setup';render()};
+  document.getElementById('again').onclick=()=>{S.results=[];S.idx=0;S.revealed=false;S.phase='game';render()};
+}
+
+function start(){render()}
+if(hot&&hot.ready)hot.ready(start);else start();
+})();
+</script>
+</body>
+</html>
